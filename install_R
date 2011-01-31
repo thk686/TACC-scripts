@@ -1,0 +1,262 @@
+#!/bin/bash
+
+LOG_FILE=${PWD}/${0}.log
+
+R_BUILD_DIR=${1:-${HOME}/Rbuild}
+R_INSTALL_DIR=${2:-${HOME}/local}
+R_DOWNLOAD_URL=${3:-"http://cran.r-project.org/src/base/R-latest.tar.gz"}
+
+LOCKFILE=${R_BUILD_DIR}/${0}.lock
+
+if [ -e $LOCKFILE ]
+then
+	echo "A lock exists in the build directory"
+	echo -n "Enter y to ignore the lock: "
+	read IGNORE_LOCK
+	if [ "$IGNORE_LOCK" != "y" ]
+	then
+		echo "Cannot continue"
+		exit
+	fi
+else
+	touch $LOCKFILE
+fi
+
+# I have found more aggressive opts cause problems with add-on packages
+BUILD_FLAGS=-O3
+
+export CC=icc
+export CXX=icc
+export F77=ifort
+export FC=ifort
+
+export CFLAGS=$BUILD_FLAGS
+export CXXFLAGS=$BUILD_FLAGS
+export FFLAGS=$BUILD_FLAGS
+export FCFLAGS=$BUILD_FLAGS
+
+# This appears to have no effect...
+export BLAS_LIBS="-L$TACC_GOTOBLAS_LIB -lgoto_lp64_mp"
+export CONFIGURE_OPTS="--with-blas"
+
+if [ -d $R_BUILD_DIR ]
+then
+	echo -n "Enter y to remove ${R_BUILD_DIR}: "
+	read REMOVE_R_BUILD_DIR
+fi
+
+if [ "$REMOVE_R_BUILD_DIR" != "y" ]
+then
+	echo -n "Enter y to download latest R sources: "
+	read DOWNLOAD_LATEST_R
+
+	if [ "$DOWNLOAD_LATEST_R" != "y" ]
+	then
+
+		echo -n "Enter y to run a make uninstall: "
+		read RUN_MAKE_UNINSTALL
+
+		echo -n "Enter y to run a make distclean: "
+		read RUN_MAKE_DISTCLEAN
+
+		if [ "$RUN_MAKE_DISTCLEAN" != "y" ]
+		then
+			echo -n "Enter y to run a make clean: "
+			read RUN_MAKE_CLEAN
+		fi
+
+	fi
+
+else
+
+	DOWNLOAD_LATEST_R=y
+
+fi
+
+echo -n "Enter y to run configure: "
+read RUN_CONFIGURE
+
+echo -n "Enter y to run make: "
+read RUN_MAKE
+
+echo -n "Enter y to remove install dir (be careful!): "
+read REMOVE_INSTALL_DIR
+
+echo -n "Enter y to run make install: "
+read RUN_MAKE_INSTALL
+
+if [ "$RUN_MAKE_INSTALL" = "y" ]
+then
+	echo -n "Enter y to remove build dir after installation: "
+	read REMOVE_BUILD_DIR_AFTER_INSTALL
+fi
+
+echo
+echo "Going to run these commands:"
+echo
+
+if [ "$REMOVE_R_BUILD_DIR" = "y" ]
+then
+	echo rm -rf $R_BUILD_DIR
+	echo mkdir $R_BUILD_DIR
+fi
+
+echo cd $R_BUILD_DIR
+
+if [ "$DOWNLOAD_LATEST_R" = "y" ]
+then
+	echo wget $R_DOWNLOAD_URL \-O\- \| tar xzf \-
+fi
+
+if [ "$RUN_MAKE_UNINSTALL" = "y" ]
+then
+	echo make uninstall
+fi
+
+if [ "$RUN_MAKE_DISTCLEAN" = "y" ]
+then
+	echo make distclean
+fi
+
+if [ "$RUN_MAKE_CLEAN" = "y" ]
+then
+	echo make clean
+fi
+
+if [ "$RUN_CONFIGURE" = "y" ]
+then
+	echo ./configure --prefix=${R_INSTALL_DIR} $CONFIGURE_OPTS
+fi
+
+if [ "$RUN_MAKE" = "y" ]
+then
+	echo make
+fi
+
+if [ "$REMOVE_INSTALL_DIR" = "y" ]
+then
+	echo rm -rf $R_INSTALL_DIR
+fi
+
+if [ "$RUN_MAKE_INSTALL" = "y" ]
+then
+	echo make install
+fi
+
+if [ "$REMOVE_BUILD_DIR_AFTER_INSTALL" = "y" ]
+then
+	echo rm -rf $R_BUILD_DIR
+fi
+
+echo
+echo -n "Enter y to continue: "
+read CONTINUE
+
+if [ "$CONTINUE" != "y" ]
+then
+	echo "Exiting"
+	exit
+fi
+
+echo
+if [ "$REMOVE_R_BUILD_DIR" = "y" ]
+then
+	echo "Removing build dir; be patient... "
+	rm -rf $R_BUILD_DIR
+	mkdir $R_BUILD_DIR
+	touch $LOCKFILE
+	echo "done"
+fi
+
+cd $R_BUILD_DIR
+
+if [ "$DOWNLOAD_LATEST_R" = "y" ]
+then
+	wget $R_DOWNLOAD_URL -O- | tar xzf -
+fi
+
+DIR_OPTS=(`find ./* -type d -exec basename {} \; -prune`)
+
+case ${#DIR_OPTS[*]} in
+	0)
+		echo "No R sources to build"
+		exit
+		;;
+	1)
+		cd $DIR_OPTS
+		;;
+	*)
+	        echo "   Pick a build directory:"
+		echo
+      		for i in `seq 0 $((${#DIR_OPTS[*]} - 1))`
+       		do
+                	echo "   ${i} = ${DIR_OPTS[$i]}"
+        	done
+		echo
+        	echo -n "   Enter number: "
+        	read DIRNUM
+        	cd ${DIR_OPTS[$DIRNUM]}
+		;;
+esac
+
+echo
+echo "Going to background..."
+echo "See $LOG_FILE for output"
+
+# Start subshell
+(
+exec > $LOG_FILE 2>&1
+
+if [ "$RUN_MAKE_UNINSTALL" = "y" ]
+then
+	make uninstall
+fi
+
+if [ "$RUN_MAKE_DISTCLEAN" = "y" ]
+then
+	make distclean
+fi
+
+if [ "$RUN_MAKE_CLEAN" = "y" ]
+then
+	make clean
+fi
+
+if [ "$RUN_CONFIGURE" = "y" ]
+then
+	./configure --prefix=${R_INSTALL_DIR} $CONFIGURE_OPTS
+fi
+
+if [ "$RUN_MAKE" = "y" ]
+then
+	make
+fi
+
+if [ "$REMOVE_INSTALL_DIR" = "y" ]
+then
+	echo "Removing install dir... "
+	rm -rf $R_INSTALL_DIR
+	echo "done"
+fi
+
+if [ "$RUN_MAKE_INSTALL" = "y" ]
+then
+	make install
+fi
+
+if [ "$REMOVE_BUILD_DIR_AFTER_INSTALL" = "y" ]
+then
+	rm -rf $R_BUILD_DIR
+fi
+
+rm -f $LOCKFILE
+
+echo
+echo "Done."
+echo
+
+exit
+) &
+# End subshell
+
+exit

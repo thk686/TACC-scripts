@@ -1,0 +1,43 @@
+#!/bin/bash
+
+LOG_FILE=${0}.log
+
+REINSTALL_ALL=n
+echo -n "Enter y to reinstall all packages: "
+read REINSTALL_ALL
+
+UPDATE_ALL=n
+if [ "$REINSTALL_ALL" != "y" ]
+then
+	echo -n "Enter y update all packages: "
+	read UPDATE_ALL
+fi
+
+echo
+echo "Going to background..."
+echo
+
+( # Start subshell
+
+exec > $LOG_FILE 2>&1
+
+R --vanilla << EOF
+options(repos = "http://www.revolution-computing.com/cran")
+instpkgs = installed.packages()[,1]
+if ( identical("${REINSTALL_ALL}", "y") ) install.packages(instpkgs)
+if ( identical("${UPDATE_ALL}", "y") ) update.packages(ask = FALSE)
+pkglist = c('akima', 'foreach', 'deSolve', 'rootSolve', 'doMC',
+            'nlme', 'lme4', 'Matrix', 'doMC', 'vegan', 'fields')
+for ( pkg in pkglist )
+{
+	if ( ! is.element(pkg, instpkgs) )
+		install.packages(pkg)
+}
+
+cat("Done\n")
+EOF
+
+) & # End subshell
+
+exit
+

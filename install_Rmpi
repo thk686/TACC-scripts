@@ -1,0 +1,10 @@
+#!/bin/bash
+R --vanilla << EOF
+install.packages("Rmpi", clean = TRUE, 
+configure.args = "--with-mpi=$MPICH_HOME
+--with-Rmpi-type=MPICH --with-Rmpi-libpath=$MPICH_HOME/lib/shared
+--with-Rmpi-include=$MPICH_HOME/include",
+repos = "http://www.revolution-computing.com/cran",
+INSTALL_opts = "--no-test-load")
+q()
+EOF
