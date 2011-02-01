@@ -1,4 +1,10 @@
 #!/bin/bash
+#
+# Copyright Tim Keitt
+# Licensed under the GPL (http://www.gnu.org)
+#
+# Usage: install_Rmpi
+#
 R --vanilla << EOF
 install.packages("Rmpi", clean = TRUE, 
 configure.args = "--with-mpi=$MPICH_HOME

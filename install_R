@@ -1,5 +1,12 @@
 #!/bin/bash
-
+#
+# Copyright Tim Keitt
+# Licensed under the GPL (http://www.gnu.org/)
+#
+# Usage: install_R build_dir install_dir source_url
+#
+# Reasonable defaults are provided for the arguments
+#
 R_BUILD_DIR=${1:-${HOME}/Rbuild}
 R_INSTALL_DIR=${2:-${HOME}/local}
 R_DOWNLOAD_URL=${3:-"http://cran.r-project.org/src/base/R-latest.tar.gz"}

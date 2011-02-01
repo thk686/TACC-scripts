@@ -1,4 +1,29 @@
 #!/bin/bash
+#
+# Copyright Tim Keitt
+# Licensed under the GPL (http://www.gnu.org/)
+#
+# Usage: install_packages [package-names]
+#
+# If any of package-names names a file containing package names,
+# these will be read and installed as well
+#
+INSTALL_LIST=$@
+PACKAGE_LIST=""
+
+for PACKAGE in $INSTALL_LIST
+do
+	if [ -r $PACKAGE ]
+	then
+		FTYPE=$(file -b $PACKAGE | cut -f 1 -d " ")
+		if [ "$FTYPE" = "ASCII" ]
+		then
+			PACKAGE_LIST="${PACKAGE_LIST} $(cat $PACKAGE)"
+		fi
+	else
+		PACKAGE_LIST="${PACKAGE_LIST} $PACKAGE"
+	fi
+done
 
 PROGNAME=`basename ${0}`
 LOG_FILE=${PROGNAME}.log
@@ -30,12 +55,10 @@ options(repos = "http://www.revolution-computing.com/cran")
 instpkgs = installed.packages()[,1]
 if ( identical("${REINSTALL_ALL}", "y") ) install.packages(instpkgs)
 if ( identical("${UPDATE_ALL}", "y") ) update.packages(ask = FALSE)
-pkglist = c('akima', 'foreach', 'deSolve', 'rootSolve', 'doMC',
-            'nlme', 'lme4', 'Matrix', 'doMC', 'vegan', 'fields')
+pkglist = strsplit("${PACKAGE_LIST}", " ")
 for ( pkg in pkglist )
 {
-	if ( ! is.element(pkg, instpkgs) )
-		install.packages(pkg)
+	if ( !identical(pkg, "") ) install.packages(pkg)
 }
 
 cat("Done\n")
