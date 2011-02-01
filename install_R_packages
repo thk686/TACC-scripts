@@ -26,17 +26,21 @@ do
 done
 
 PROGNAME=`basename ${0}`
-LOG_FILE=${PROGNAME}.log
-
-REINSTALL_ALL=n
-echo -n "Enter y to reinstall all packages: "
-read REINSTALL_ALL
+LOG_FILE=${PROGNAME}_${PPID}.log
 
 UPDATE_ALL=n
-if [ "$REINSTALL_ALL" != "y" ]
+REINSTALL_ALL=n
+
+if [ "$PACKAGE_LIST" == "" ]
 then
-	echo -n "Enter y update all packages: "
-	read UPDATE_ALL
+	echo -n "Enter y to reinstall all packages: "
+	read REINSTALL_ALL
+
+	if [ "$REINSTALL_ALL" != "y" ]
+	then
+		echo -n "Enter y update all packages: "
+		read UPDATE_ALL
+	fi
 fi
 
 echo -n "Enter y to send email when finished: "
@@ -55,10 +59,10 @@ options(repos = "http://www.revolution-computing.com/cran")
 instpkgs = installed.packages()[,1]
 if ( identical("${REINSTALL_ALL}", "y") ) install.packages(instpkgs)
 if ( identical("${UPDATE_ALL}", "y") ) update.packages(ask = FALSE)
-pkglist = strsplit("${PACKAGE_LIST}", " ")
+pkglist = unlist(strsplit("${PACKAGE_LIST}", " "))
 for ( pkg in pkglist )
 {
-	if ( !identical(pkg, "") ) install.packages(pkg)
+	if ( !identical(pkg, character(0)) ) install.packages(pkg)
 }
 
 cat("Done\n")

@@ -12,7 +12,7 @@ R_INSTALL_DIR=${2:-${HOME}/local}
 R_DOWNLOAD_URL=${3:-"http://cran.r-project.org/src/base/R-latest.tar.gz"}
 
 PROGNAME=`basename $0`
-LOG_FILE=${R_BUILD_DIR}/${PROGNAME}.log
+LOG_FILE=${R_BUILD_DIR}/${PROGNAME}_${PPID}.log
 LOCKFILE=${R_BUILD_DIR}/${PROGNAME}.lock
 
 if [ -e $LOCKFILE ]
