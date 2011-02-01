@@ -1,12 +1,12 @@
 #!/bin/bash
 
-LOG_FILE=${PWD}/${0}.log
-
 R_BUILD_DIR=${1:-${HOME}/Rbuild}
 R_INSTALL_DIR=${2:-${HOME}/local}
 R_DOWNLOAD_URL=${3:-"http://cran.r-project.org/src/base/R-latest.tar.gz"}
 
-LOCKFILE=${R_BUILD_DIR}/${0}.lock
+PROGNAME=`basename $0`
+LOG_FILE=${R_BUILD_DIR}/${PROGNAME}.log
+LOCKFILE=${R_BUILD_DIR}/${PROGNAME}.lock
 
 if [ -e $LOCKFILE ]
 then
@@ -23,7 +23,7 @@ else
 fi
 
 # I have found more aggressive opts cause problems with add-on packages
-BUILD_FLAGS=-O3
+BUILD_FLAGS=-O2
 
 export CC=icc
 export CXX=icc
@@ -35,9 +35,9 @@ export CXXFLAGS=$BUILD_FLAGS
 export FFLAGS=$BUILD_FLAGS
 export FCFLAGS=$BUILD_FLAGS
 
-# This appears to have no effect...
-export BLAS_LIBS="-L$TACC_GOTOBLAS_LIB -lgoto_lp64_mp"
-export CONFIGURE_OPTS="--with-blas"
+# These appears to have no effect...
+# export BLAS_LIBS="-L$TACC_GOTOBLAS_LIB -lgoto_lp64_mp"
+# export CONFIGURE_OPTS="--with-blas"
 
 if [ -d $R_BUILD_DIR ]
 then
@@ -90,6 +90,9 @@ then
 	echo -n "Enter y to remove build dir after installation: "
 	read REMOVE_BUILD_DIR_AFTER_INSTALL
 fi
+
+echo -n "Enter y to send email when finished: "
+read SEND_EMAIL
 
 echo
 echo "Going to run these commands:"
@@ -249,11 +252,23 @@ then
 	rm -rf $R_BUILD_DIR
 fi
 
-rm -f $LOCKFILE
+if [ -e $LOCKFILE ]
+then
+	rm -f $LOCKFILE
+fi
 
 echo
 echo "Done."
 echo
+
+if [ "$SEND_EMAIL" = "y" ]
+then
+
+mail -s "$PROGNAME completed" $USER << EOF
+$PROGNAME completed on `hostname`
+EOF
+
+fi
 
 exit
 ) &
