@@ -5,6 +5,9 @@
 #
 # Usage: install_Rmpi
 #
+# This package will work much better if you use an MPI2
+# compatible MPI
+#
 R --vanilla << EOF
 install.packages("Rmpi", clean = TRUE, 
 configure.args = "--with-mpi=$MPICH_HOME
