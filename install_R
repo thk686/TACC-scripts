@@ -178,6 +178,11 @@ then
 	echo "done"
 fi
 
+if [ ! -d "$R_BUILD_DIR" ]
+then
+	mkdir $R_BUILD_DIR
+fi
+
 cd $R_BUILD_DIR
 
 if [ "$DOWNLOAD_LATEST_R" = "y" ]
